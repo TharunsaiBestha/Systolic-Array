@@ -1,5 +1,5 @@
 import numpy as np
-path="/home/eee/Documents/C++/Matrix/"
+path="/home/tharunsai/Documents/Project/code/Systolic-Array-main/"
 def matrix_to_systolic_matrix(A):
     row=len(A)
     col=len(A[0])
@@ -14,9 +14,11 @@ def matrix_to_systolic_matrix(A):
 def random_matrix(low,high,size_t):
     temp=np.random.randint(low,high,size=size_t)
     return temp.tolist()
-def genAB(low,high,size):
-    A=random_matrix(low,high,size)
-    B=random_matrix(low,high,size)
+def genAB(A,B):
+    #A=random_matrix(low,high,size)
+    #B=random_matrix(low,high,size)
+    A=np.fliplr(np.array(A)).tolist()
+    B=np.flipud(np.array(B)).T.tolist()
     A=matrix_to_systolic_matrix(A)
     B=matrix_to_systolic_matrix(B)
     B=np.array(B).T.tolist()

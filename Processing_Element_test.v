@@ -11,7 +11,7 @@ initial begin
     write=0;
     A=5;B=2;
     #10 clr=0;
-    #12 read=1;A=20;write=1;
+    #10 read=1;A=20;write=1;
     #10 read=0;write=0;
     #10 clr=1;
     #200 $finish;
