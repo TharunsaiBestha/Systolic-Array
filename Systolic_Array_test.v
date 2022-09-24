@@ -38,4 +38,19 @@ initial begin
     $dumpfile("Systolic_Array_test.vcd");
     $dumpvars(0,Systolic_Array_test);
 end
+initial begin
+    // #140 read={{5{1'b1}},{20{1'b0}}};
+    // write={{5{1'b1}},{20{1'b0}}};  
+    // #10 read={{15{1'b0}},{5{1'b1}},{5{1'b0}}};
+    // write={{15{1'b0}},{5{1'b1}},{5{1'b0}}};
+    // #10 read={{10{1'b0}},{5{1'b1}},{10{1'b0}}};
+    // write={{10{1'b0}},{5{1'b1}},{10{1'b0}}};
+    // #10 read={{5{1'b0}},{5{1'b1}},{15{1'b0}}};
+    // write={{5{1'b0}},{5{1'b1}},{15{1'b0}}};
+    // #10 read={{20{1'b0}},{5{1'b1}}};
+    //   write={{20{1'b0}},{5{1'b1}}};
+    #145 read={25{1'b1}};
+    #10 write={25{1'b1}};
+    read={25{1'b0}};
+end
 endmodule

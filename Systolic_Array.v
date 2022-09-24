@@ -1,3 +1,11 @@
+module counter(out,clk,clr);
+input clk,clr;
+output reg[3:0] out;
+always @(posedge clk) begin
+    if(clr)out<=4'b0000;
+    else out<=out+1;
+end
+endmodule
 module Processing_Element(A,B,Aout,Bout,clk,clr,read,write);
 parameter N=32;
 input[N-1:0] A,B;
@@ -10,15 +18,25 @@ always @(posedge clk)begin
         Aout<=0;
         Bout<=0;
     end
+    // else if(~clr & read & ~write)begin
+    //     Acc<=B;
+    // end
+    // else if(~clr & write & ~read)begin
+    //     Bout<=Acc;
+    // end
+    // else if(clr & write & ~read)begin
+    //     Bout<=Acc;
+    //     Acc<=0;
+    // end
+    // else if(~clr & write & read)begin
+    //     Bout<=Acc;
+    //     Acc<=B;
+    // end
     else if(~clr & read & ~write)begin
-        Acc<=B;
+      Bout<=Acc;
     end
-    else if(~clr & write & ~read)begin
-        Bout<=Acc;
-    end
-    else if(~clr & write & read)begin
-        Acc<=B;
-        Bout<=Acc;
+    else if(~clr & ~read & write )begin
+      Bout<=B;
     end
     else begin
         Acc<=Acc+A*B;
@@ -48,10 +66,12 @@ input[N-1:0] A0,A1,A2,A3,A4,B0,B1,B2,B3,B4;
 output[N-1:0] A0_out,A1_out,A2_out,A3_out,A4_out,B0_out,B1_out,B2_out,B3_out,B4_out;
 input clk;
 input[M-1:0] clr,read,write;
+wire[3:0] cout;
 wire[N-1:0] B0_temp0,B1_temp0,B2_temp0,B3_temp0,B4_temp0;
 wire[N-1:0] B0_temp1,B1_temp1,B2_temp1,B3_temp1,B4_temp1;
 wire[N-1:0] B0_temp2,B1_temp2,B2_temp2,B3_temp2,B4_temp2;
 wire[N-1:0] B0_temp3,B1_temp3,B2_temp3,B3_temp3,B4_temp3;
+counter C0(cout,clk,clr[0]);
 PE_layer PE_layer0(A0,B0,B1,B2,B3,B4,A0_out,B0_temp0,B1_temp0,B2_temp0,B3_temp0,B4_temp0,clk,clr[4:0],read[4:0],write[4:0]);
 PE_layer PE_layer1(A1,B0_temp0,B1_temp0,B2_temp0,B3_temp0,B4_temp0,A1_out,B0_temp1,B1_temp1,B2_temp1,B3_temp1,B4_temp1,clk,clr[9:5],read[9:5],write[9:5]);
 PE_layer PE_layer2(A2,B0_temp1,B1_temp1,B2_temp1,B3_temp1,B4_temp1,A2_out,B0_temp2,B1_temp2,B2_temp2,B3_temp2,B4_temp2,clk,clr[14:10],read[14:10],write[14:10]);
