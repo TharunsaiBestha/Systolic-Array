@@ -23,6 +23,16 @@ def genAB(A,B):
     B=matrix_to_systolic_matrix(B)
     B=np.array(B).T.tolist()
     return (A,B)
+def matrix_to_file(A,name,bits):
+    pathM=path+name
+    F=open(pathM,"w")
+    row=len(A)
+    col=len(A[0])
+    for i in range(0,row):
+        for j in range(0,col):
+            temp=bits.format(A[i][j])
+            F.write(temp+"\n")
+    F.close()
 def to_file(A,B):
     rowA=len(A)
     colA=len(A[0])
