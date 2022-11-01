@@ -61,7 +61,7 @@ input[width-1:0] base_address_A,base_address_B;
 input[width-1:0] location_memory_out;
 output reg[width-1:0] memory_in_A,memory_in_B;
 always @(*) begin
-    if(location_memory_out==8'b11111111)begin memory_in_A<=8'b11111111;memory_in_B<=8'b11111111;end
+    if(location_memory_out==8'b11111111)begin memory_in_A<=8'b11111111;memory_in_B<=8'b11111111; end
     else begin
       memory_in_A<=base_address_A+{4'b0000,location_memory_out[7:4]}*row+{4'b0000,location_memory_out[3:0]};
       memory_in_B<=base_address_B+{4'b0000,location_memory_out[3:0]}*row+{4'b0000,location_memory_out[7:4]};
@@ -79,7 +79,7 @@ output reg[width-1:0] memory_in;
 always @(*) begin
     if(location_memory_out==8'b11111111)memory_in<=8'b11111111;
     else begin
-      memory_in<={4'b0000,location_memory_out[7:4]}*row+{4'b0000,location_memory_out[3:0]};
+      memory_in<=base_address+{4'b0000,location_memory_out[7:4]}*row+{4'b0000,location_memory_out[3:0]};
     end
 end
 endmodule
@@ -89,12 +89,12 @@ parameter N = 32;
 input clk,rd_en,wr_en;
 input[width-1:0] in_A,in_B,address;
 input[N-1:0] data_in;
-output[N-1:0] out_A,out_B;
+output reg[N-1:0] out_A,out_B;
 reg[N-1:0] mem[0:256];
 always @(posedge clk) begin
     if(rd_en)begin
     if(in_A==8'b11111111)out_A<=8'b00000000;
-    else if(in_B==8'b11111111)out_B<=8'b00000000;
+    if(in_B==8'b11111111)out_B<=8'b00000000;
     else begin out_A<=mem[in_A];out_B<=mem[in_B]; end
     end
      if(wr_en)mem[address]<=data_in;
@@ -354,8 +354,13 @@ parameter N = 32;
 input clk,LM_clr;
 output complete;
 input[M-1:0] base_address_in_A,base_address_in_B;
-wire[5:0] LM_counter;
-output reg[N-1:0] base_address_A,base_address_B;
+wire[5:0] LM_counter_out;
+wire[M-1:0] LM_data,mem_address_A,mem_address_B;
+wire com;
+output[M-1:0] base_address_A,base_address_B;
+assign complete=com;
+assign base_address_A=mem_address_A;
+assign base_address_B=mem_address_B;
 location_memory_counter LMC(LM_counter_out,LM_clr,clk,com);
 location_memory LM(LM_counter_out,LM_data,clk);
 location_to_index LtoI(base_address_in_A,base_address_in_B,LM_data,mem_address_A,mem_address_B);
@@ -366,6 +371,8 @@ input clk,de_mux_clr;
 input[N-1:0] data_A,data_B;
 output[2:0] dmux_sel_out;
 output[N-1:0] out0_A,out1_A,out2_A,out3_A,out4_A,out0_B,out1_B,out2_B,out3_B,out4_B;
+wire[2:0] dmux_sel;
+wire de_mux_clr;
 assign dmux_sel_out=dmux_sel;
 de_mux_counter DMC(dmux_sel,de_mux_clr,clk);
 de_mux DM_A(dmux_sel,data_A,out0_A,out1_A,out2_A,out3_A,out4_A);
@@ -382,13 +389,16 @@ input[N-1:0] data_A,data_B;
 output[M-1:0] Address_A,Address_B;
 output[2:0] dmux_sel_out;
 output[N-1:0] out0_A,out1_A,out2_A,out3_A,out4_A,out0_B,out1_B,out2_B,out3_B,out4_B;
-address_gen AG(clk,LM_clr,complete,base_address_A,base_address_B,base_address_A,base_address_B);
+wire complete;
+assign com=complete;
+address_gen AG(clk,LM_clr,complete,base_address_A,base_address_B,Address_A,Address_B);
 Memory_to_FIFO MTF(clk,de_mux_clr,dmux_sel_out,data_A,data_B,out0_A,out1_A,out2_A,out3_A,out4_A,out0_B,out1_B,out2_B,out3_B,out4_B);
 endmodule
 module FIFO_5(clk,rst,in0,in1,in2,in3,in4,out0,out1,out2,out3,out4,wr_en,rd_en,buf_empty,buf_full);
 parameter N = 32;
 input clk,rst;
-input[4:0] wr_en,rd_en,buf_empty,buf_full;
+input[4:0] wr_en,rd_en;
+output[4:0] buf_empty,buf_full;
 input[N-1:0] in0,in1,in2,in3,in4;
 output[N-1:0] out0,out1,out2,out3,out4;
 FIFO F0(clk,rst,in0,out0,wr_en[0],rd_en[0],buf_empty[0],buf_full[0]);
@@ -434,7 +444,7 @@ output[31:0] data_A,data_B;
 output de_mux_clr_out,mem_rd_en;
 output[2:0] dmux_sel_out;
 wire LM_clr,de_mux_clr;
-wire[7:0] base_address_ctrl;
+wire[7:0] base_address_ctrl_A,base_address_ctrl_B;
 wire complete;
 assign com=complete;
 assign de_mux_clr_out=de_mux_clr;
@@ -452,10 +462,10 @@ output[7:0] Address_A,Address_B;
 input[31:0] data_A,data_B;
 input[4:0] rd_en;
 wire[31:0] out0_A,out1_A,out2_A,out3_A,out4_A,out0_B,out1_B,out2_B,out3_B,out4_B;
-wire[4:0] wr_en,buf_empty,buf_full;
+wire[4:0] wr_en,buf_empty_A,buf_full_A,buf_empty_B,buf_full_B;
 wire[2:0] dmux_sel_out;
 wire en;
-assign en=&buf_full;
+assign en=&buf_full_A;
 input_of_FIFO IOF(init & ~en,com,mem_rd_en,de_mux_clr_out,dmux_sel_out,base_address_A,base_address_B,Address_A,Address_B,data_A,data_B,clk,
 out0_A,out1_A,out2_A,out3_A,out4_A,out0_B,out1_B,out2_B,out3_B,out4_B);
 // FIFO F0(clk,rst,in0,out0,wr_en[0],rd_en[0],buf_empty[0],buf_full[0]);
@@ -463,8 +473,8 @@ out0_A,out1_A,out2_A,out3_A,out4_A,out0_B,out1_B,out2_B,out3_B,out4_B);
 // FIFO F2(clk,rst,in2,out2,wr_en[2],rd_en[2],buf_empty[2],buf_full[2]);
 // FIFO F3(clk,rst,in3,out3,wr_en[3],rd_en[3],buf_empty[3],buf_full[3]);
 // FIFO F4(clk,rst,in4,out4,wr_en[4],rd_en[4],buf_empty[4],buf_full[4]);
-FIFO_5 A_5(clk,rst,out0_A,out1_A,out2_A,out3_A,out4_A,A0,A1,A2,A3,A4,wr_en,rd_en,buf_empty,buf_full);
-FIFO_5 B_5(clk,rst,out0_B,out1_B,out2_B,out3_B,out4_B,B0,B1,B2,B3,B4,wr_en,rd_en,buf_empty,buf_full);
+FIFO_5 A_5(clk,rst,out0_A,out1_A,out2_A,out3_A,out4_A,A0,A1,A2,A3,A4,wr_en,rd_en,buf_empty_A,buf_full_A);
+FIFO_5 B_5(clk,rst,out0_B,out1_B,out2_B,out3_B,out4_B,B0,B1,B2,B3,B4,wr_en,rd_en,buf_empty_B,buf_full_B);
 signal_to_FIFO STF(de_mux_clr_out,dmux_sel_out,wr_en);
 endmodule
 module computational_block_write(LM_clr,mux_clr,com,wr_en,mux_sel_out,base_address,Address_C,data_C,clk,
@@ -474,7 +484,7 @@ output com;
 output[2:0] mux_sel_out;
 input[7:0] base_address;
 input[31:0] in0,in1,in2,in3,in4;
-output[7:0] base_address_C;
+output[7:0] Address_C;
 output[31:0] data_C;
 wire[5:0] LM_counter_out;
 wire[7:0] LM_data;
@@ -537,10 +547,10 @@ assign mem_wr_en=wr_en;
 computational_block_write CB(LM_clr,mux_clr,complete,wr_en,mux_sel,base_address_ctrl,Address_C,data_C,clk,in0,in1,in2,in3,in4);
 controller_write CN(init,complete,wr_en,base_address,LM_clr,mux_clr,base_address_ctrl,clk);
 endmodule
-module FIFO_MEM(init,com,clk,rst,wr_en,base_address,Address_C,data_C,
+module FIFO_MEM(init,com,mem_wr_en,clk,rst,wr_en,base_address,Address_C,data_C,
 in0,in1,in2,in3,in4);
 input init,clk,rst;
-output com;
+output com,mem_wr_en;
 input[31:0] in0,in1,in2,in3,in4;
 input[7:0] base_address;
 input[4:0] wr_en;
@@ -553,7 +563,7 @@ wire mux_clr_out;
 wire en;
 assign en=&buf_empty;
 //input_of_FIFO IOF(init & ~en,com,de_mux_clr_out,dmux_sel_out,base_address,clk,in0,in1,in2,in3,in4);
-SA_MEM SM(init & ~en,com,mux_clr_out,mux_sel_out,base_address,Address_C,data_C,clk,out0,out1,out2,out3,out4);
+SA_MEM SM(init & ~en,com,mem_wr_en,mux_clr_out,mux_sel_out,base_address,Address_C,data_C,clk,out0,out1,out2,out3,out4);
 // FIFO F0(clk,rst,in0,out0,wr_en[0],rd_en[0],buf_empty[0],buf_full[0]);
 // FIFO F1(clk,rst,in1,out1,wr_en[1],rd_en[1],buf_empty[1],buf_full[1]);
 // FIFO F2(clk,rst,in2,out2,wr_en[2],rd_en[2],buf_empty[2],buf_full[2]);
@@ -578,7 +588,7 @@ module SAA_Opt(init,rst,complete,clk,base_address_A,base_address_B,base_address_
 parameter N = 32;
 input clk,init,rst;
 output complete;
-wire[4:0] wr_en;
+wire wr_en,rd_en;
 wire com,com_SA,init_SA,mem_rd_en,mem_wr_en;
 input[7:0] base_address_A,base_address_B,base_address_C;
 wire[7:0] Address_A,Address_B,Address_C;
@@ -589,8 +599,8 @@ MEM_FIFO MF(init,com,mem_rd_en,clk,rst,{5{rd_en}},base_address_A,base_address_B,
 A0,A1,A2,A3,A4,B0,B1,B2,B3,B4);
 counter_A CoA(clk,rst,com,com_SA,init_SA);
 Systolic_Array_with_Controller SAC(init_SA,com_SA,clk,rd_en,wr_en,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4,A0_out,A1_out,A2_out,A3_out,A4_out,B0_out,B1_out,B2_out,B3_out,B4_out);
-memory MEM(Address_A,Address_B,Address_C,data_A,data_B,,mem_rd_en,mem_wr_en,clk);
+memory MEM(Address_A,Address_B,Address_C,data_A,data_B,data_C,mem_rd_en,mem_wr_en,clk);
 //FIFO_MEM FM(com_SA,complete,clk,rst,wr_en,base_address_C,B0_out,B1_out,B2_out,B3_out,B4_out);
-FIFO_MEM FM(init,com,mem_wr_en,clk,rst,{5{wr_en}},base_address_C,Address_C,data_C,
-in0,in1,in2,in3,in4);
+FIFO_MEM FM(com_SA,complete,mem_wr_en,clk,rst,{5{wr_en}},base_address_C,Address_C,data_C,
+B0_out,B1_out,B2_out,B3_out,B4_out);
 endmodule
