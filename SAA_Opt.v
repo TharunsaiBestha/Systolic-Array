@@ -589,7 +589,7 @@ parameter N = 32;
 input clk,init,rst;
 output complete;
 wire wr_en,rd_en;
-wire com,com_SA,init_SA,mem_rd_en,mem_wr_en;
+wire com,com_SA,init_SA,mem_rd_en,mem_wr_en,fifo_init;
 input[7:0] base_address_A,base_address_B,base_address_C;
 wire[7:0] Address_A,Address_B,Address_C;
 wire[31:0] data_A,data_B,data_C;
@@ -601,6 +601,7 @@ counter_A CoA(clk,rst,com,com_SA,init_SA);
 Systolic_Array_with_Controller SAC(init_SA,com_SA,clk,rd_en,wr_en,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4,A0_out,A1_out,A2_out,A3_out,A4_out,B0_out,B1_out,B2_out,B3_out,B4_out);
 memory MEM(Address_A,Address_B,Address_C,data_A,data_B,data_C,mem_rd_en,mem_wr_en,clk);
 //FIFO_MEM FM(com_SA,complete,clk,rst,wr_en,base_address_C,B0_out,B1_out,B2_out,B3_out,B4_out);
-FIFO_MEM FM(com_SA,complete,mem_wr_en,clk,rst,{5{wr_en}},base_address_C,Address_C,data_C,
+counter_A CoW(clk,rst,com_SA,complete,fifo_init);
+FIFO_MEM FM(fifo_init,complete,mem_wr_en,clk,rst,{5{wr_en}},base_address_C,Address_C,data_C,
 B0_out,B1_out,B2_out,B3_out,B4_out);
 endmodule
